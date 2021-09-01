@@ -102,13 +102,13 @@ func main() {
 	fmt.Println("\n================================== Soal 4")
 
 	switch {
-	case tahun > 1944 && tahun < 1964:
+	case tahun >= 1944 && tahun <= 1964:
 		fmt.Println("Anda Baby boomer")
-	case tahun > 1965 && tahun < 1979:
+	case tahun >= 1965 && tahun <= 1979:
 		fmt.Println("Anda Generasi X")
-	case tahun > 1980 && tahun < 1994:
+	case tahun >= 1980 && tahun <= 1994:
 		fmt.Println("Anda Generasi Y (Millenials)")
-	case tahun > 1995 && tahun < 2015:
+	case tahun >= 1995 && tahun <= 2015:
 		fmt.Println("Anda Generasi Z")
 	}
 }
