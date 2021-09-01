@@ -110,5 +110,7 @@ func main() {
 		fmt.Println("Anda Generasi Y (Millenials)")
 	case tahun >= 1995 && tahun <= 2015:
 		fmt.Println("Anda Generasi Z")
+	default:
+		fmt.Println("Gen Halilintar")
 	}
 }
