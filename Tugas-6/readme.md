@@ -1,4 +1,4 @@
-# Mulai tugas 6 akan ada readme berupa screenshot hasil program di terminal untuk dokumentasi
+# Mulai tugas 6 akan ada readme berupa screenshot hasil program di terminal untuk dokumentasi (inisiatif untuk pembelajaran diri sendiri)
 
 
 Screenshot 1
