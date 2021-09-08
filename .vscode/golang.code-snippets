@@ -31,5 +31,13 @@
 			"fmt.Printf($1)"
 		],
 		"description": "fmt.Printf snippets"
+	},
+	"GO Boilerplate": {
+		"scope": "go",
+		"prefix": "pmain",
+		"body": [
+			"package main\n\nimport \"fmt\"\n\nfunc main() {\n\t$1\n\tfmt.Println()\n}"
+		],
+		"description": "fmt.Printf snippets"
 	}
 }
