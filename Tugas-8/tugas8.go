@@ -164,7 +164,7 @@ func main() {
 	// Soal 2
 	fmt.Println()
 	fmt.Println("-------------Soal 2")
-	var samsung phone = phone{
+	var samsung tampilDataPhone = &phone{
 		name:   "Samsung Galaxy Note 20",
 		brand:  "Samsung Galaxy Note 20",
 		year:   2020,
