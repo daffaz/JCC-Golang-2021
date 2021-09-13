@@ -1,3 +1,3 @@
 # Screenshot terminal tugas 11
 
-![Screenshot tugas 11](ss1.PNG)
+![Screenshot tugas 11](ss.PNG)
