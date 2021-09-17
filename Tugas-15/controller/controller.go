@@ -2,6 +2,8 @@ package controller
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -95,5 +97,51 @@ func InsertNilai(context context.Context, nilai obj.NilaiMahasiswa) error {
 	if err != nil {
 		log.Fatal("Error trying to query the database:", err)
 	}
+	return nil
+}
+
+func UpdateNilai(context context.Context, nilai obj.NilaiMahasiswa, idMahasiswa string) error {
+	db, err := model.ConnectToMySQL()
+
+	if err != nil {
+		log.Fatal("Error connecting to database", err)
+	}
+
+	query := fmt.Sprintf("UPDATE %v SET nama='%v', matakuliah='%v', nilai=%v, indeksnilai='%v', updated_at=NOW() WHERE id='%v'", table, nilai.Nama, nilai.MataKuliah, nilai.Nilai, getIndexNilai(nilai.Nilai), idMahasiswa)
+
+	_, err = db.QueryContext(context, query)
+
+	if err != nil {
+		log.Fatal("Error trying to query the database:", err)
+	}
+
+	return nil
+}
+
+func DeleteNilaiMahasiswa(context context.Context, idMahasiswa string) error {
+	db, err := model.ConnectToMySQL()
+
+	if err != nil {
+		log.Fatal("Error connecting to database", err)
+	}
+
+	query := fmt.Sprintf("DELETE FROM %v WHERE id = %v", table, idMahasiswa)
+
+	result, err := db.ExecContext(context, query)
+
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	rowAffected, err := result.RowsAffected()
+
+	log.Println(rowAffected)
+	if rowAffected == 0 {
+		return errors.New("Can't delete, Id not found")
+	}
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	return nil
 }
