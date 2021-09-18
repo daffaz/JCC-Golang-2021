@@ -6,6 +6,7 @@ import (
 	"log"
 	"quiz3/config"
 	"quiz3/model"
+	"strconv"
 	"time"
 )
 
@@ -61,4 +62,33 @@ func GetAllBooks(context context.Context) ([]model.Book, error) {
 		arrayBuku = append(arrayBuku, buku)
 	}
 	return arrayBuku, nil
+}
+
+func getKetebalanBuku(halaman int) string {
+	switch {
+	case halaman >= 201:
+		return "Tebal"
+	case halaman >= 101 && halaman <= 200:
+		return "Sedang"
+	case halaman <= 100:
+		return "Tipis"
+	default:
+		return "Undefined"
+	}
+}
+
+func formatPrice(price int) string {
+	fixedPrice := fmt.Sprintf("Rp.")
+}
+
+func InsertBuku(context context.Context, dataBuku model.Book) error {
+	db, err := config.ConnectToMySQL()
+	if err != nil {
+		log.Fatal("Error connecting to database:", err)
+	}
+
+	tebalBuku, _ := strconv.Atoi(dataBuku.TotalPage)
+
+	query := fmt.Sprintf("INSERT INTO %v (title, description, image_url, release_year, price, total_page, created_at, updated_at) VALUES ('%v', '%v', '%v', %v, %v, '%v', '%v', NOW(), NOW())", tableName, dataBuku.Title, dataBuku.Description, dataBuku.ImageUrl, dataBuku.ReleaseYear, dataBuku.Price, dataBuku.TotalPage, getKetebalanBuku(tebalBuku))
+
 }

@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math"
 	"net/http"
+	"quiz3/controller"
+	"quiz3/utils"
 	"strconv"
 
 	"github.com/julienschmidt/httprouter"
@@ -127,6 +130,24 @@ func BangunDatarHandler() httprouter.Handle {
 	}
 }
 
+// Soal 3
+func GetDataBuku() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		context, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		dataBuku, err := controller.GetAllBooks(context)
+		if err != nil {
+			utils.ResponseToJSON(w, err, http.StatusBadRequest)
+			return
+		}
+
+		utils.ResponseToJSON(w, dataBuku, http.StatusOK)
+	}
+}
+
+func 
+
 // Soal 5
 func middleWare(next httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -152,7 +173,7 @@ func main() {
 	router.GET("/bangun-datar/:bangundatar", middleWare(BangunDatarHandler()))
 
 	// Soal 3
-	// router.GET("/books/", middleWare())
+	router.GET("/books/", middleWare(GetDataBuku()))
 
 	log.Fatal(http.ListenAndServe(":10000", router))
 }
