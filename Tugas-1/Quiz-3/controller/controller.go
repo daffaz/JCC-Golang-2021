@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -162,6 +163,70 @@ func InsertBuku(context context.Context, dataBuku model.Book) error {
 
 	if err != nil {
 		log.Fatal("Error trying to insert to database:", err)
+	}
+
+	return nil
+}
+
+func UpdateBuku(context context.Context, dataBuku model.Book, idBuku string) error {
+	db, err := config.ConnectToMySQL()
+
+	if err != nil {
+		log.Fatal("Error connecting to database", err)
+	}
+	tebalBuku, _ := strconv.Atoi(dataBuku.TotalPage)
+	fixedPrice, _ := strconv.Atoi(dataBuku.Price)
+
+	releaseYear, errYear := validateYear(dataBuku.ReleaseYear)
+	fixedLink, errLink := validateUrl(dataBuku.ImageUrl)
+
+	if errLink != nil && errYear != nil {
+		log.Fatal("Error pada input URL gambar dan input tahun")
+	}
+
+	if errYear != nil {
+		log.Fatal(errYear)
+	}
+
+	if errLink != nil {
+		log.Fatal(errLink)
+	}
+
+	// title, description, image_url, release_year, price, total_page, kategori_ketebalan, created_at, updated_at
+	query := fmt.Sprintf("UPDATE %v SET title='%v', description='%v', image_url='%v', release_year=%v, price = '%v', total_page = '%v', kategori_ketebalan = '%v', updated_at=NOW() WHERE id='%v'", tableName, dataBuku.Title, dataBuku.Description, fixedLink, releaseYear, formatPrice(fixedPrice), dataBuku.TotalPage, getKetebalanBuku(tebalBuku), idBuku)
+
+	_, err = db.QueryContext(context, query)
+
+	if err != nil {
+		log.Fatal("Error trying to query the database:", err)
+	}
+
+	return nil
+}
+
+func DeleteBuku(context context.Context, idBuku string) error {
+	db, err := config.ConnectToMySQL()
+
+	if err != nil {
+		log.Fatal("Error connecting to database", err)
+	}
+
+	query := fmt.Sprintf("DELETE FROM %v WHERE id = %v", tableName, idBuku)
+
+	result, err := db.ExecContext(context, query)
+
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	rowAffected, err := result.RowsAffected()
+
+	log.Println(rowAffected)
+	if rowAffected == 0 {
+		return errors.New("can't delete, Id not found")
+	}
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 
 	return nil

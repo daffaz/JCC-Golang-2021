@@ -183,9 +183,70 @@ func PostBuku() httprouter.Handle {
 		}
 
 		response := map[string]interface{}{
-			"message": "Success",
+			"message": "Post success",
 		}
 		utils.ResponseToJSON(w, response, http.StatusCreated)
+	}
+}
+
+func UpdateDataBuku() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		if r.Header.Get("Content-type") != "application/json" {
+			utils.ResponseToJSON(w, "Only accepting application/json POST method", http.StatusBadRequest)
+			return
+		}
+		context, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		var bukuDummy model.Book2
+		if err := json.NewDecoder(r.Body).Decode(&bukuDummy); err != nil {
+			utils.ResponseToJSON(w, err, http.StatusBadRequest)
+			return
+		}
+
+		somePrice := strconv.Itoa(bukuDummy.Price)
+		var buku model.Book = model.Book{
+			Id:                bukuDummy.Id,
+			Title:             bukuDummy.Title,
+			Description:       bukuDummy.Description,
+			ImageUrl:          bukuDummy.ImageUrl,
+			ReleaseYear:       bukuDummy.ReleaseYear,
+			Price:             somePrice,
+			TotalPage:         bukuDummy.TotalPage,
+			KategoriKetebalan: bukuDummy.KategoriKetebalan,
+			CreatedAt:         bukuDummy.CreatedAt,
+			UpdatedAt:         bukuDummy.UpdatedAt,
+		}
+
+		var idBuku = params.ByName("id")
+
+		if err := controller.UpdateBuku(context, buku, idBuku); err != nil {
+			utils.ResponseToJSON(w, err, http.StatusInternalServerError)
+			return
+		}
+
+		response := map[string]interface{}{
+			"message": "Update success",
+		}
+		utils.ResponseToJSON(w, response, http.StatusCreated)
+	}
+}
+
+func DeleteDataBuku() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		context, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		var idBuku = params.ByName("id")
+		if err := controller.DeleteBuku(context, idBuku); err != nil {
+			utils.ResponseToJSON(w, err, http.StatusInternalServerError)
+			return
+		}
+
+		res := map[string]string{
+			"status": "Delete Success",
+		}
+		utils.ResponseToJSON(w, res, http.StatusOK)
 	}
 }
 
@@ -216,6 +277,8 @@ func main() {
 	// Soal 3
 	router.GET("/books/", middleWare(GetDataBuku()))
 	router.POST("/books/create", middleWare(PostBuku()))
+	router.PUT("/books/update/:id", middleWare(UpdateDataBuku()))
+	router.DELETE("/books/delete/:id", middleWare(DeleteDataBuku()))
 
 	log.Println("Running in port :10000")
 	log.Fatal(http.ListenAndServe(":10000", router))
