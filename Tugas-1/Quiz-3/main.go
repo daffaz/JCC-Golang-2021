@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
 	"net/http"
 	"quiz3/controller"
+	"quiz3/model"
 	"quiz3/utils"
 	"strconv"
 
@@ -146,7 +148,46 @@ func GetDataBuku() httprouter.Handle {
 	}
 }
 
-func 
+func PostBuku() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		if r.Header.Get("Content-type") != "application/json" {
+			utils.ResponseToJSON(w, "Only accepting application/json POST method", http.StatusBadRequest)
+			return
+		}
+		context, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		var bukuDummy model.Book2
+		if err := json.NewDecoder(r.Body).Decode(&bukuDummy); err != nil {
+			utils.ResponseToJSON(w, err, http.StatusBadRequest)
+			return
+		}
+
+		somePrice := strconv.Itoa(bukuDummy.Price)
+		var buku model.Book = model.Book{
+			Id:                bukuDummy.Id,
+			Title:             bukuDummy.Title,
+			Description:       bukuDummy.Description,
+			ImageUrl:          bukuDummy.ImageUrl,
+			ReleaseYear:       bukuDummy.ReleaseYear,
+			Price:             somePrice,
+			TotalPage:         bukuDummy.TotalPage,
+			KategoriKetebalan: bukuDummy.KategoriKetebalan,
+			CreatedAt:         bukuDummy.CreatedAt,
+			UpdatedAt:         bukuDummy.UpdatedAt,
+		}
+
+		if err := controller.InsertBuku(context, buku); err != nil {
+			utils.ResponseToJSON(w, err, http.StatusInternalServerError)
+			return
+		}
+
+		response := map[string]interface{}{
+			"message": "Success",
+		}
+		utils.ResponseToJSON(w, response, http.StatusCreated)
+	}
+}
 
 // Soal 5
 func middleWare(next httprouter.Handle) httprouter.Handle {
@@ -174,6 +215,8 @@ func main() {
 
 	// Soal 3
 	router.GET("/books/", middleWare(GetDataBuku()))
+	router.POST("/books/create", middleWare(PostBuku()))
 
+	log.Println("Running in port :10000")
 	log.Fatal(http.ListenAndServe(":10000", router))
 }

@@ -2,8 +2,10 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"quiz3/config"
 	"quiz3/model"
 	"strconv"
@@ -33,6 +35,7 @@ func GetAllBooks(context context.Context) ([]model.Book, error) {
 	for rowQuery.Next() {
 		var buku model.Book
 		var createdAt, updatedAt string
+		// var priceBook string
 
 		if err := rowQuery.Scan(
 			&buku.Id,
@@ -58,6 +61,11 @@ func GetAllBooks(context context.Context) ([]model.Book, error) {
 		if err != nil {
 			log.Fatal("Error parsing updated at:", err)
 		}
+
+		// noRupiah := strings.Replace("Rp.100.000", "Rp.", "", -1)
+		// noDot := strings.Replace(noRupiah, ".", "", -1)
+		// noTrail := strings.Replace(noDot, ",-", "", -1)
+		// buku.Price = noTrail
 
 		arrayBuku = append(arrayBuku, buku)
 	}
@@ -103,8 +111,25 @@ func formatCurrency(n int64) string {
 }
 
 func formatPrice(price int) string {
-	fixedPrice := fmt.Sprintf("Rp.%d,-", formatCurrency(int64(price)))
+	fixedPrice := fmt.Sprintf("Rp.%v,-", formatCurrency(int64(price)))
 	return fixedPrice
+}
+
+func validateYear(year int) (int, error) {
+	if year >= 1980 && year <= 2021 {
+		return year, nil
+	}
+	return -1, errors.New("tahun tidak boleh kurang dari 1980 dan tidak boleh lebih dari 2021")
+}
+
+func validateUrl(link string) (string, error) {
+	_, err := url.ParseRequestURI(link)
+
+	if err != nil {
+		return "", errors.New("link tidak valid")
+	}
+
+	return link, nil
 }
 
 func InsertBuku(context context.Context, dataBuku model.Book) error {
@@ -116,6 +141,28 @@ func InsertBuku(context context.Context, dataBuku model.Book) error {
 	tebalBuku, _ := strconv.Atoi(dataBuku.TotalPage)
 	fixedPrice, _ := strconv.Atoi(dataBuku.Price)
 
-	query := fmt.Sprintf("INSERT INTO %v (title, description, image_url, release_year, price, total_page, created_at, updated_at) VALUES ('%v', '%v', '%v', %v, %v, '%v', '%v', NOW(), NOW())", tableName, dataBuku.Title, dataBuku.Description, dataBuku.ImageUrl, dataBuku.ReleaseYear, formatPrice(fixedPrice), dataBuku.TotalPage, getKetebalanBuku(tebalBuku))
+	releaseYear, errYear := validateYear(dataBuku.ReleaseYear)
+	fixedLink, errLink := validateUrl(dataBuku.ImageUrl)
 
+	if errLink != nil && errYear != nil {
+		log.Fatal("Error pada input URL gambar dan input tahun")
+	}
+
+	if errYear != nil {
+		log.Fatal(errYear)
+	}
+
+	if errLink != nil {
+		log.Fatal(errLink)
+	}
+
+	query := fmt.Sprintf("INSERT INTO %v (title, description, image_url, release_year, price, total_page, kategori_ketebalan, created_at, updated_at) VALUES ('%v', '%v', '%v', %v, '%v', '%v', '%v', NOW(), NOW())", tableName, dataBuku.Title, dataBuku.Description, fixedLink, releaseYear, formatPrice(fixedPrice), dataBuku.TotalPage, getKetebalanBuku(tebalBuku))
+
+	_, err = db.QueryContext(context, query)
+
+	if err != nil {
+		log.Fatal("Error trying to insert to database:", err)
+	}
+
+	return nil
 }
