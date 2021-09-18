@@ -77,8 +77,34 @@ func getKetebalanBuku(halaman int) string {
 	}
 }
 
+func formatCurrency(n int64) string {
+	in := strconv.FormatInt(n, 10)
+	numOfDigits := len(in)
+	if n < 0 {
+		numOfDigits--
+	}
+	numOfCommas := (numOfDigits - 1) / 3
+
+	out := make([]byte, len(in)+numOfCommas)
+	if n < 0 {
+		in, out[0] = in[1:], '-'
+	}
+
+	for i, j, k := len(in)-1, len(out)-1, 0; ; i, j = i-1, j-1 {
+		out[j] = in[i]
+		if i == 0 {
+			return string(out)
+		}
+		if k++; k == 3 {
+			j, k = j-1, 0
+			out[j] = '.'
+		}
+	}
+}
+
 func formatPrice(price int) string {
-	fixedPrice := fmt.Sprintf("Rp.")
+	fixedPrice := fmt.Sprintf("Rp.%d,-", formatCurrency(int64(price)))
+	return fixedPrice
 }
 
 func InsertBuku(context context.Context, dataBuku model.Book) error {
@@ -88,7 +114,8 @@ func InsertBuku(context context.Context, dataBuku model.Book) error {
 	}
 
 	tebalBuku, _ := strconv.Atoi(dataBuku.TotalPage)
+	fixedPrice, _ := strconv.Atoi(dataBuku.Price)
 
-	query := fmt.Sprintf("INSERT INTO %v (title, description, image_url, release_year, price, total_page, created_at, updated_at) VALUES ('%v', '%v', '%v', %v, %v, '%v', '%v', NOW(), NOW())", tableName, dataBuku.Title, dataBuku.Description, dataBuku.ImageUrl, dataBuku.ReleaseYear, dataBuku.Price, dataBuku.TotalPage, getKetebalanBuku(tebalBuku))
+	query := fmt.Sprintf("INSERT INTO %v (title, description, image_url, release_year, price, total_page, created_at, updated_at) VALUES ('%v', '%v', '%v', %v, %v, '%v', '%v', NOW(), NOW())", tableName, dataBuku.Title, dataBuku.Description, dataBuku.ImageUrl, dataBuku.ReleaseYear, formatPrice(fixedPrice), dataBuku.TotalPage, getKetebalanBuku(tebalBuku))
 
 }
