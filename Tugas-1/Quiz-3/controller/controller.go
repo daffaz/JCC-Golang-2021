@@ -10,6 +10,7 @@ import (
 	"quiz3/config"
 	"quiz3/model"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -18,7 +19,7 @@ const (
 	dateLayout string = "2006-01-02 15:04:05"
 )
 
-func GetAllBooks(context context.Context) ([]model.Book, error) {
+func GetAllBooks(context context.Context, params map[string]string) ([]model.Book, error) {
 	var arrayBuku []model.Book
 
 	db, err := config.ConnectToMySQL()
@@ -26,7 +27,45 @@ func GetAllBooks(context context.Context) ([]model.Book, error) {
 		log.Fatal("Error connecting to database:", err)
 	}
 
-	query := fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC", tableName)
+	var whereCondition []string
+	var sortsort string = ""
+	// "paramTitle"
+	// "paramminYear"
+	// "parammaxYear"
+	// "paramminPage"
+	// "parammaxPage"
+	// "paramsort"
+	if params["paramTitle"] != "" {
+		whereCondition = append(whereCondition, fmt.Sprintf("title = '%s'", params["paramTitle"]))
+	}
+	if params["paramminYear"] != "" {
+		whereCondition = append(whereCondition, fmt.Sprintf("release_year >= %v", params["paramminYear"]))
+	}
+	if params["parammaxYear"] != "" {
+		whereCondition = append(whereCondition, fmt.Sprintf("release_year <= %v", params["parammaxYear"]))
+	}
+	if params["paramminPage"] != "" {
+		whereCondition = append(whereCondition, fmt.Sprintf("total_page >= %v", params["paramminPage"]))
+	}
+	if params["parammaxPage"] != "" {
+		whereCondition = append(whereCondition, fmt.Sprintf("total_page <= %v", params["parammaxPage"]))
+	}
+	if params["paramsort"] != "" {
+		// whereCondition = append(whereCondition, fmt.Sprintf("title = %s", params["paramsort"]))
+		sortsort = params["paramsort"]
+	}
+
+	var query string
+
+	if sortsort == "" {
+		sortsort = "DESC"
+	}
+	wherewere := strings.Join(whereCondition, ", ")
+	if len(params) == 0 {
+		query = fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC", tableName)
+	} else {
+		query = fmt.Sprintf("SELECT * FROM %v WHERE %v ORDER BY 'created_at' %v", tableName, wherewere, sortsort)
+	}
 
 	rowQuery, err := db.QueryContext(context, query)
 	if err != nil {

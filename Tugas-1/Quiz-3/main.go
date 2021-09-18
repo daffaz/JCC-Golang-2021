@@ -131,6 +131,15 @@ func BangunDatarHandler() httprouter.Handle {
 		}
 	}
 }
+func remove(s map[string]string) map[string]string {
+	var r map[string]string = map[string]string{}
+	for key, str := range s {
+		if str != "" {
+			r[key] = str
+		}
+	}
+	return r
+}
 
 // Soal 3
 func GetDataBuku() httprouter.Handle {
@@ -138,7 +147,27 @@ func GetDataBuku() httprouter.Handle {
 		context, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		dataBuku, err := controller.GetAllBooks(context)
+		paramTitle := r.URL.Query().Get("title")
+		paramminYear := r.URL.Query().Get("minYear")
+		parammaxYear := r.URL.Query().Get("maxYear")
+		paramminPage := r.URL.Query().Get("minPage")
+		parammaxPage := r.URL.Query().Get("maxPage")
+		paramsort := r.URL.Query().Get("sort")
+
+		// utils.ResponseToJSON(w, paramTitle, http.StatusBadGateway)
+		// return
+
+		allParams := map[string]string{
+			"paramTitle":   paramTitle,
+			"paramminYear": paramminYear,
+			"parammaxYear": parammaxYear,
+			"paramminPage": paramminPage,
+			"parammaxPage": parammaxPage,
+			"paramsort":    paramsort,
+		}
+		paramram := remove(allParams)
+
+		dataBuku, err := controller.GetAllBooks(context, paramram)
 		if err != nil {
 			utils.ResponseToJSON(w, err, http.StatusBadRequest)
 			return
