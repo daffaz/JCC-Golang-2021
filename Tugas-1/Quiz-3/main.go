@@ -131,7 +131,7 @@ func BangunDatarHandler() httprouter.Handle {
 		}
 	}
 }
-func remove(s map[string]string) map[string]string {
+func removeUseless(s map[string]string) map[string]string {
 	var r map[string]string = map[string]string{}
 	for key, str := range s {
 		if str != "" {
@@ -165,11 +165,16 @@ func GetDataBuku() httprouter.Handle {
 			"parammaxPage": parammaxPage,
 			"paramsort":    paramsort,
 		}
-		paramram := remove(allParams)
+		paramram := removeUseless(allParams)
 
 		dataBuku, err := controller.GetAllBooks(context, paramram)
 		if err != nil {
 			utils.ResponseToJSON(w, err, http.StatusBadRequest)
+			return
+		}
+
+		if dataBuku == nil {
+			utils.ResponseToJSON(w, "Data tidak ditemukan", http.StatusNotFound)
 			return
 		}
 
@@ -206,8 +211,22 @@ func PostBuku() httprouter.Handle {
 			UpdatedAt:         bukuDummy.UpdatedAt,
 		}
 
+		_, errLink := controller.ValidateUrl(buku.ImageUrl)
+		_, errYear := controller.ValidateYear(buku.ReleaseYear)
+
+		if errLink != nil && errYear != nil {
+			utils.ResponseToJSON(w, "Tahun dan image url tidak valid", http.StatusBadRequest)
+			return
+		}
+		if errYear != nil {
+			utils.ResponseToJSON(w, "Tahun tidak boleh kurang dari 1980 dan tidak boleh lebih dari 2021", http.StatusBadRequest)
+			return
+		}
+		if errLink != nil {
+			utils.ResponseToJSON(w, "Image url tidak valid", http.StatusBadRequest)
+			return
+		}
 		if err := controller.InsertBuku(context, buku); err != nil {
-			utils.ResponseToJSON(w, err, http.StatusInternalServerError)
 			return
 		}
 

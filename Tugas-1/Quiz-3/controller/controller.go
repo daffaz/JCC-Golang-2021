@@ -38,18 +38,22 @@ func GetAllBooks(context context.Context, params map[string]string) ([]model.Boo
 	if params["paramTitle"] != "" {
 		whereCondition = append(whereCondition, fmt.Sprintf("title = '%s'", params["paramTitle"]))
 	}
-	if params["paramminYear"] != "" {
+	if params["paramminYear"] != "" && params["parammaxYear"] != "" {
+		whereCondition = append(whereCondition, fmt.Sprintf("release_year >= %v AND release_year <= %v", params["paramminYear"], params["parammaxYear"]))
+	} else if params["parammaxYear"] != "" {
+		whereCondition = append(whereCondition, fmt.Sprintf("release_year <= %v", params["parammaxYear"]))
+	} else if params["paramminYear"] != "" {
 		whereCondition = append(whereCondition, fmt.Sprintf("release_year >= %v", params["paramminYear"]))
 	}
-	if params["parammaxYear"] != "" {
-		whereCondition = append(whereCondition, fmt.Sprintf("release_year <= %v", params["parammaxYear"]))
-	}
-	if params["paramminPage"] != "" {
+
+	if params["paramminPage"] != "" && params["parammaxPage"] != "" {
+		whereCondition = append(whereCondition, fmt.Sprintf("total_page >= %v AND total_page <= %v", params["paramminPage"], params["parammaxPage"]))
+	} else if params["paramminPage"] != "" {
 		whereCondition = append(whereCondition, fmt.Sprintf("total_page >= %v", params["paramminPage"]))
-	}
-	if params["parammaxPage"] != "" {
+	} else if params["parammaxPage"] != "" {
 		whereCondition = append(whereCondition, fmt.Sprintf("total_page <= %v", params["parammaxPage"]))
 	}
+
 	if params["paramsort"] != "" {
 		// whereCondition = append(whereCondition, fmt.Sprintf("title = %s", params["paramsort"]))
 		sortsort = params["paramsort"]
@@ -60,13 +64,14 @@ func GetAllBooks(context context.Context, params map[string]string) ([]model.Boo
 	if sortsort == "" {
 		sortsort = "DESC"
 	}
-	wherewere := strings.Join(whereCondition, ", ")
+	wherewere := strings.Join(whereCondition, " AND ")
 	if len(params) == 0 {
 		query = fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC", tableName)
 	} else {
-		query = fmt.Sprintf("SELECT * FROM %v WHERE %v ORDER BY 'created_at' %v", tableName, wherewere, sortsort)
+		query = fmt.Sprintf("SELECT * FROM %v WHERE %v ORDER BY id %v", tableName, wherewere, sortsort)
 	}
 
+	log.Println(query)
 	rowQuery, err := db.QueryContext(context, query)
 	if err != nil {
 		log.Fatal("Error querying to database:", err)
@@ -155,14 +160,14 @@ func formatPrice(price int) string {
 	return fixedPrice
 }
 
-func validateYear(year int) (int, error) {
+func ValidateYear(year int) (int, error) {
 	if year >= 1980 && year <= 2021 {
 		return year, nil
 	}
 	return -1, errors.New("tahun tidak boleh kurang dari 1980 dan tidak boleh lebih dari 2021")
 }
 
-func validateUrl(link string) (string, error) {
+func ValidateUrl(link string) (string, error) {
 	_, err := url.ParseRequestURI(link)
 
 	if err != nil {
@@ -181,8 +186,8 @@ func InsertBuku(context context.Context, dataBuku model.Book) error {
 	tebalBuku, _ := strconv.Atoi(dataBuku.TotalPage)
 	fixedPrice, _ := strconv.Atoi(dataBuku.Price)
 
-	releaseYear, errYear := validateYear(dataBuku.ReleaseYear)
-	fixedLink, errLink := validateUrl(dataBuku.ImageUrl)
+	releaseYear, errYear := ValidateYear(dataBuku.ReleaseYear)
+	fixedLink, errLink := ValidateUrl(dataBuku.ImageUrl)
 
 	if errLink != nil && errYear != nil {
 		log.Fatal("Error pada input URL gambar dan input tahun")
@@ -216,8 +221,8 @@ func UpdateBuku(context context.Context, dataBuku model.Book, idBuku string) err
 	tebalBuku, _ := strconv.Atoi(dataBuku.TotalPage)
 	fixedPrice, _ := strconv.Atoi(dataBuku.Price)
 
-	releaseYear, errYear := validateYear(dataBuku.ReleaseYear)
-	fixedLink, errLink := validateUrl(dataBuku.ImageUrl)
+	releaseYear, errYear := ValidateYear(dataBuku.ReleaseYear)
+	fixedLink, errLink := ValidateUrl(dataBuku.ImageUrl)
 
 	if errLink != nil && errYear != nil {
 		log.Fatal("Error pada input URL gambar dan input tahun")
